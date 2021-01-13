@@ -110,7 +110,7 @@ tickers = ["MSFT","AAPL","FB","AMZN","INTC", "CSCO","VZ","IBM","QCOM","LYFT"]
 
 
 ohlc_intraday = {} # directory with ohlc value for each stock
-key_path = "/Users/kieranodonnell/Desktop/Codes/Finance/Alpha Vantage API Key.txt"
+key_path = "path"
 ts = TimeSeries(key=open(key_path,'r').read(), output_format='pandas')
 
 attempt = 0 # initializing passthrough variable
@@ -146,7 +146,7 @@ for ticker in tickers:
     #Above will make NaN as timestamps are not regular
     ohlc_renko[ticker]["bar_num"].fillna(method='ffill',inplace=True)
     #Forward fill to cover NaN
-    ohlc_renko[ticker]["macd"]= MACD(ohlc_renko[ticker],12,26,9)[0] 
+    ohlc_renko[ticker]["macd"]= MACD(ohlc_renko[ticker],12,26,9)[0]
     #set MACD params a,b,c
     ohlc_renko[ticker]["macd_sig"]= MACD(ohlc_renko[ticker],12,26,9)[1]
     ohlc_renko[ticker]["macd_slope"] = slope(ohlc_renko[ticker]["macd"],5)

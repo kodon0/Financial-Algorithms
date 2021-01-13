@@ -45,7 +45,7 @@ def sharpe(DF,rf):
     df = DF.copy()
     sr = (CAGR(df) - rf)/volatility(df)
     return sr
-    
+
 
 def max_dd(DF):
     "function to calculate max drawdown"
@@ -61,25 +61,25 @@ def max_dd(DF):
 #Critical for intraday startegy -> need high volume!
 tickers = ["MSFT","AAPL","FB","AMZN","INTC", "CSCO","VZ","IBM","QCOM","LYFT"]
 
-ohlc_intraday = {} # directory with ohlc value for each stock            
-key_path = "/Users/kieranodonnell/Desktop/Codes/Finance/Alpha Vantage API Key.txt"
+ohlc_intraday = {} # directory with ohlc value for each stock
+key_path = "path"
 ts = TimeSeries(key=open(key_path,'r').read(), output_format='pandas')
 
 attempt = 0 # initializing passthrough variable
 drop = [] # initializing list to store tickers whose close price was successfully extracted
 while len(tickers) != 0 and attempt <=5:
     tickers = [j for j in tickers if j not in drop]
-    for i in range(len(tickers)): 
+    for i in range(len(tickers)):
         try:
             ohlc_intraday[tickers[i]] = ts.get_intraday(symbol=tickers[i],interval='5min', outputsize='full')[0]
             ohlc_intraday[tickers[i]].columns = ["Open","High","Low","Adj Close","Volume"]
-            drop.append(tickers[i])      
+            drop.append(tickers[i])
         except:
             print(tickers[i]," :failed to fetch data...retrying")
             continue
     attempt+=1
 
- 
+
 tickers = ohlc_intraday.keys() # redefine tickers variable after removing any tickers with corrupted data
 
 ################################Backtesting####################################
@@ -111,7 +111,7 @@ for ticker in tickers:
             elif ohlc_dict[ticker]["Low"][i]<=ohlc_dict[ticker]["roll_min_cp"][i] and \
                ohlc_dict[ticker]["Volume"][i]>1.5*ohlc_dict[ticker]["roll_max_vol"][i-1]:
                 tickers_signal[ticker] = "Sell"
-        
+
         elif tickers_signal[ticker] == "Buy":
             if ohlc_dict[ticker]["Adj Close"][i]<ohlc_dict[ticker]["Adj Close"][i-1] - ohlc_dict[ticker]["ATR"][i-1]:
                 tickers_signal[ticker] = ""
@@ -122,7 +122,7 @@ for ticker in tickers:
                 tickers_ret[ticker].append(((ohlc_dict[ticker]["Adj Close"][i-1] - ohlc_dict[ticker]["ATR"][i-1])/ohlc_dict[ticker]["Adj Close"][i-1])-1)
             else:
                 tickers_ret[ticker].append((ohlc_dict[ticker]["Adj Close"][i]/ohlc_dict[ticker]["Adj Close"][i-1])-1)
-                
+
         elif tickers_signal[ticker] == "Sell":
             if ohlc_dict[ticker]["Adj Close"][i]>ohlc_dict[ticker]["Adj Close"][i-1] + ohlc_dict[ticker]["ATR"][i-1]:
                 tickers_signal[ticker] = ""
@@ -133,7 +133,7 @@ for ticker in tickers:
                 tickers_ret[ticker].append((ohlc_dict[ticker]["Adj Close"][i-1]/(ohlc_dict[ticker]["Adj Close"][i-1] + ohlc_dict[ticker]["ATR"][i-1]))-1)
             else:
                 tickers_ret[ticker].append((ohlc_dict[ticker]["Adj Close"][i-1]/ohlc_dict[ticker]["Adj Close"][i])-1)
-                
+
     ohlc_dict[ticker]["ret"] = np.array(tickers_ret[ticker])
 
 # calculating overall strategy's KPIs
@@ -143,7 +143,7 @@ for ticker in tickers:
 strategy_df["ret"] = strategy_df.mean(axis=1)
 CAGR(strategy_df)
 sharpe(strategy_df,0.025)
-max_dd(strategy_df)  
+max_dd(strategy_df)
 
 
 # vizualization of strategy return
@@ -155,11 +155,10 @@ cagr = {}
 sharpe_ratios = {}
 max_drawdown = {}
 for ticker in tickers:
-    print("calculating KPIs for ",ticker)      
+    print("calculating KPIs for ",ticker)
     cagr[ticker] =  CAGR(ohlc_dict[ticker])
     sharpe_ratios[ticker] =  sharpe(ohlc_dict[ticker],0.025)
     max_drawdown[ticker] =  max_dd(ohlc_dict[ticker])
 
-KPI_df = pd.DataFrame([cagr,sharpe_ratios,max_drawdown],index=["Return","Sharpe Ratio","Max Drawdown"])      
+KPI_df = pd.DataFrame([cagr,sharpe_ratios,max_drawdown],index=["Return","Sharpe Ratio","Max Drawdown"])
 KPI_df.T
-

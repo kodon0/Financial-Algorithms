@@ -16,7 +16,7 @@ import time
 import copy
 
 #initiating API connection and defining trade parameters
-token_path = "/Users/kieranodonnell/Desktop/Codes/Finance/fxcm_api_demo.txt"
+token_path = "path"
 con = fxcmpy.fxcmpy(access_token = open(token_path,'r').read(), log_level = 'error', server='demo')
 
 #defining strategy parameters -> input info
@@ -127,7 +127,7 @@ def trade_signal(MERGED_DF,l_s):
 
 
 def main():
-    
+
     "Interpret trade signal"
     try:
         open_pos = con.get_open_positions()

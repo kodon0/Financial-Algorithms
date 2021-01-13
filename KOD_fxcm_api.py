@@ -7,14 +7,14 @@ Created on Tue May 12 14:56:11 2020
 """
 
 #Import libraries
- 
+
 import fxcmpy
 import socketio
 import time
 
 #Connect API and define trade parameters
 
-token_path = "/Users/kieranodonnell/Desktop/Codes/Finance/fxcm_api_demo.txt"
+token_path = "path"
 con = fxcmpy.fxcmpy(access_token = open(token_path, 'r').read(), log_level = 'error', server = 'demo')
 
 pair = "EUR/USD"
@@ -32,14 +32,14 @@ con.get_prices("EUR/USD")
 con.unsubscribe_market_data("EUR/USD")
 
 #Using time recursion for continuous exectution
-    
+
 starttime = time.time()
 timeout = time.time() + 60*2*0.2 #I.e. two minutes duration
 
 while time.time() <= timeout:
     print(con.get_last_price("EUR/USD")[0])
     #Make sure to unsub after!
-    
+
 #Get account info and account data
     #Use transpose to view df
 con.get_accounts().T

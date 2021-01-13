@@ -58,14 +58,14 @@ def renko_DF(DF):
     df2.brick_size = max(0.5,round(ATR(DF,120)["ATR"][-1],0))
     #renko_df = df2.get_bricks()
     renko_df = df2.get_ohlc_data() #This bit just covers the renko function
-    renko_df["bar_num"] = np.where(renko_df["uptrend"]==True,1,np.where(renko_df["uptrend"]==False,-1,0)) 
+    renko_df["bar_num"] = np.where(renko_df["uptrend"]==True,1,np.where(renko_df["uptrend"]==False,-1,0))
     #Above converts uptrend to 1 and downtrend to -1
     for i in range(1,len(renko_df["bar_num"])):
         if renko_df["bar_num"][i]>0 and renko_df["bar_num"][i-1]>0:
             renko_df["bar_num"][i]+=renko_df["bar_num"][i-1]
         elif renko_df["bar_num"][i]<0 and renko_df["bar_num"][i-1]<0:
             renko_df["bar_num"][i]+=renko_df["bar_num"][i-1]
-            
+
     #Above loop checks if there have been sequential up(down)trends and adds(subtracts) them 1->2 etc
     renko_df.drop_duplicates(subset="date",keep="last",inplace=True)
     #Due to two signals in each timestep, drop duplicates, keep last ones
@@ -118,7 +118,7 @@ tickers = ["MSFT","AAPL","FB","AMZN","INTC", "CSCO","VZ","IBM","QCOM","LYFT"]
 
 
 ohlc_intraday = {} # directory with ohlc value for each stock
-key_path = "/Users/kieranodonnell/Desktop/Codes/Finance/Alpha Vantage API Key.txt"
+key_path = "path"
 ts = TimeSeries(key=open(key_path,'r').read(), output_format='pandas')
 
 attempt = 0 # initializing passthrough variable
@@ -191,10 +191,10 @@ for ticker in tickers:
 
 
 #calculating overall strategy's KPIs
-    
+
 #This is the stratgey dataframe
-    
-    
+
+
 strategy_df = pd.DataFrame()
 for ticker in tickers:
     strategy_df[ticker] = ohlc_renko[ticker]["ret"]

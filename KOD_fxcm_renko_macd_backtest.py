@@ -15,26 +15,26 @@ import statsmodels.api as sm
 import time
 import copy
 import matplotlib.pyplot as plt
- 
+
 #initiating API connection and defining trade parameters
-token_path = "/Users/kieranodonnell/Desktop/Codes/Finance/fxcm_api_demo.txt"
+token_path = "path"
 con = fxcmpy.fxcmpy(access_token = open(token_path,'r').read(), log_level = 'error', server='demo')
- 
+
 #Strategy parameters
-pair = 'AUD/USD' 
+pair = 'AUD/USD'
 pos_size = 10 #max capital allocated/position size for any currency pair
- 
+
 #How many points for calculation of slope
 n = 10
 #How many renko bars
 r_bars = 2
 #Renko brick size ATR period
 atr_period = 12
- 
+
 data = con.get_candles(pair, period='m5', number=1000)
 ohlc = data.iloc[:,[0,1,2,3,8]] #we are taking only Bid prices in this example
 ohlc.columns = ["open","close","high","low","volume"] #convert names of columns to this
- 
+
 def MACD(DF,a,b,c):
     """function to calculate MACD
        typical values a = 12; b =26, c =9"""
@@ -45,7 +45,7 @@ def MACD(DF,a,b,c):
     df["Signal"]=df["MACD"].ewm(span=c,min_periods=c).mean()
     df.dropna(inplace=True)
     return (df["MACD"],df["Signal"])
- 
+
 def ATR(DF,n):
     "function to calculate True Range and Average True Range"
     df = DF.copy()
@@ -57,7 +57,7 @@ def ATR(DF,n):
     #df['ATR'] = df['TR'].ewm(span=n,adjust=False,min_periods=n).mean()
     df2 = df.drop(['H-L','H-PC','L-PC'],axis=1)
     return df2
- 
+
 def slope(ser,n):
     "function to calculate the slope of n consecutive points on a plot"
     slopes = [i*0 for i in range(n-1)]
@@ -72,14 +72,14 @@ def slope(ser,n):
         slopes.append(results.params[-1])
     slope_angle = (np.rad2deg(np.arctan(np.array(slopes))))
     return np.array(slope_angle)
- 
+
 def renko_DF(DF):
     "function to convert ohlc data into renko bricks"
     df = DF.copy()
     df.reset_index(inplace=True)
     df = df.iloc[:,[0,1,2,3,4,5]]
     df.columns = ["date","open","close","high","low","volume"]
-    
+
     df2 = Renko(df)
     df2.brick_size = max(0.0001,round(ATR(ohlc,atr_period)["ATR"][-1],4)) #Change atr_period in Strategy parameters
     renko_df = df2.get_ohlc_data()
@@ -91,7 +91,7 @@ def renko_DF(DF):
             renko_df["bar_num"][i]+=renko_df["bar_num"][i-1]
     renko_df.drop_duplicates(subset="date",keep="last",inplace=True)
     return renko_df
- 
+
 def CAGR(DF):
     "function to calculate the Cumulative Annual Growth Rate of a trading strategy"
     df = DF.copy()
@@ -99,19 +99,19 @@ def CAGR(DF):
     n = len(df)/(252*78)
     CAGR = (df["cum_return"].tolist()[-1])**(1/n) - 1
     return CAGR
- 
+
 def volatility(DF):
     "function to calculate annualized volatility of a trading strategy"
     df = DF.copy()
     vol = df["ret"].std() * np.sqrt(252*78)
     return vol
- 
+
 def sharpe(DF,rf):
     "function to calculate sharpe ratio ; rf is the risk free rate"
     df = DF.copy()
     sr = (CAGR(df) - rf)/volatility(df)
     return sr
- 
+
 def max_dd(DF):
     "function to calculate max drawdown"
     df = DF.copy()
@@ -121,7 +121,7 @@ def max_dd(DF):
     df["drawdown_pct"] = df["drawdown"]/df["cum_roll_max"]
     max_dd = df["drawdown_pct"].max()
     return max_dd
- 
+
 #Merging renko df with original ohlc df
 tickers = pair
 ohlc_renko = {}
@@ -140,7 +140,7 @@ for ticker in tickers:
     ohlc_renko["macd_sig_slope"] = slope(ohlc_renko["macd_sig"],n)
     tickers_signal = ""
     tickers_ret = []
- 
+
 #Identifying signals and calculating daily return
 #Change r_bars in Strategy parameters for optimisation ^^
 for i in range(len(ohlc)):
@@ -150,11 +150,11 @@ for i in range(len(ohlc)):
             if ohlc_renko["bar_num"][i] >= r_bars and ohlc_renko["macd"][i] < ohlc_renko["macd_sig"][i] and \
                 ohlc_renko["macd_slope"][i] < ohlc_renko["macd_sig_slope"][i]:
                 tickers_signal = "Buy"
- 
+
             elif ohlc_renko["bar_num"][i] <= -r_bars and ohlc_renko["macd"][i] > ohlc_renko["macd_sig"][i] and \
                 ohlc_renko["macd_slope"][i] > ohlc_renko["macd_sig_slope"][i]:
                 tickers_signal = "Sell"
- 
+
     elif tickers_signal == "Sell":
         try:
             tickers_ret.append((ohlc_renko["close"][i] / ohlc_renko["close"][i-1])-1)
@@ -164,11 +164,11 @@ for i in range(len(ohlc)):
             if ohlc_renko["bar_num"][i] <= -r_bars and ohlc_renko["macd"][i] > ohlc_renko["macd_sig"][i] and \
                 ohlc_renko["macd_slope"][i] > ohlc_renko["macd_sig_slope"][i]:
                 tickers_signal = "Buy"
- 
+
             elif ohlc_renko["macd"][i] > ohlc_renko["macd_sig"][i] and \
                 ohlc_renko["macd_slope"][i] > ohlc_renko["macd_sig_slope"][i]:
                 tickers_signal = ""
- 
+
     elif tickers_signal == "Buy":
         try:
             tickers_ret.append((ohlc_renko["close"][i] / ohlc_renko["close"][i-1])-1)
@@ -178,27 +178,27 @@ for i in range(len(ohlc)):
             if ohlc_renko["bar_num"][i] >= r_bars and ohlc_renko["macd"][i] < ohlc_renko["macd_sig"][i] and \
                 ohlc_renko["macd_slope"][i] < ohlc_renko["macd_sig_slope"][i]:
                 tickers_signal = "Sell"
- 
+
             elif ohlc_renko["macd"][i] < ohlc_renko["macd_sig"][i] and \
                 ohlc_renko["macd_slope"][i] < ohlc_renko["macd_sig_slope"][i]:
                 tickers_signal = ""
- 
+
 ohlc_renko["ret"] = np.array(tickers_ret)
- 
+
 profits = []
 losses = []
- 
+
 for i in range(len(ohlc_renko)):
     if ohlc_renko['ret'][i] > 0:
         profits.append(1)
     if ohlc_renko['ret'][i] < 0:
         losses.append(1)
- 
+
 #calculating strategy's KPIs
 CAGR(ohlc_renko)
 sharpe(ohlc_renko,0.025)
 max_dd(ohlc_renko)
- 
+
 print("Comulative annual growth return is:", str(round((CAGR(ohlc_renko)*100), 2)), "%")
 print("Sharpe ratio is:", str(round(sharpe(ohlc_renko,0.025), 3)))
 print("Max drawdown is:", str(round((max_dd(ohlc_renko)*100), 3)), "%")
@@ -207,12 +207,12 @@ print("Number of Trades:", len(profits + losses))
 print("Number of Profits:", len(profits))
 print("Number of Losses:", len(losses))
 print("Winning percentage:", str(round(len(profits) / (len(profits) + len(losses)) * 100, 2)), "%")
- 
+
 #visualizing strategy returns
 plt.figure(figsize=(16,8))
 plt.title("Return of strategy", fontsize = 18)
 plt.plot(ohlc_renko['date'], (1+ohlc_renko['ret']).cumprod(), color = 'm')
 plt.xlabel('Date', fontsize = 12)
 plt.ylabel('Performance', fontsize = 12);
- 
+
 con.close()
